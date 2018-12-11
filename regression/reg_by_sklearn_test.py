@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import cross_val_score
 
 
 def test():
@@ -30,7 +33,7 @@ def test():
     #all_df.shape #==(2919,79)
     all_df['MSSubClass'].dtypes #(int64)
     all_df['MSSubClass'] = all_df['MSSubClass'].astype(str) #转换为str格式便于统计
-    all_df['MSSubClass'].value_counts() #结果与.value_counts格式和内容不同
+    all_df['MSSubClass'].value_counts() #结果与.value_counts格式和内容不同, 类似于聚合
 
     #利用one-hot处理category类型列
     pd.get_dummies(all_df['MSSubClass'], prefix='MSSubClass').head()
@@ -50,8 +53,8 @@ def test():
     dummy_test_df = all_dummy_df.loc[test_df.index] #获取全部test行
 
     #导入Ridge
-    from sklearn.linear_model import Ridge
-    from sklearn.model_selection import cross_val_score
+    #from sklearn.linear_model import Ridge
+    #from sklearn.model_selection import cross_val_score
 
     #transfer DF to Nmupy Array
     X_train = dummy_train_df.values #no ()
@@ -73,13 +76,20 @@ def test():
     plt.title("Alpha vs CV Error")
     #plt.show()
     #看图得到alpha=15 误差最低
+    #call Ridge get ridge result
     ridge = Ridge(alpha=15)
     ridge.fit(X_train, y_train)
     #log(1+x)->expm1()
     y_ridge = np.expm1(ridge.predict(X_test))
 
+    #call random forest
+    rf = RandomForestRegressor(n_estimators=500, max_features=0.3) #0.3*features总数
+    rf.fit(X_train, y_train)
+    y_rf = np.expm1(rf.predict(X_test))
+
+    y_final = (y_ridge + y_rf) / 2
     #submission
-    submission_df = pd.DataFrame(data={'Id':test_df.index, 'SalePrice':y_ridge})
+    submission_df = pd.DataFrame(data={'Id':test_df.index, 'SalePrice':y_final})
     #import pdb; pdb.set_trace()
     #submission_df.head(10)
 
